@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Caregiver Dashboard</h2>
+  <p>Showing appointment requests for caregiver id {{ caregiver_id }}</p>
+  <ul class="list">
+    {% for a in appointments %}
+      <li>
+        Appointment {{ a.appointment_id }} with member {{ a.member_user_id }} on {{ a.appointment_date }} at {{ a.appointment_time }} ({{ a.status }})
+        {% if a.status == 'pending' %}
+          <form method="post" action="/appointments/{{ a.appointment_id }}/respond" style="display:inline-block;margin-left:8px">
+            <button class="btn small" name="action" value="accept" type="submit">Accept</button>
+            <button class="btn small outline" name="action" value="decline" type="submit">Decline</button>
+          </form>
+        {% endif %}
+      </li>
+    {% else %}
+      <li>No appointments.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Search Caregivers</h2>
+  {% if allow_search %}
+  <form method="post" class="form-inline">
+    <label>Care type<input name="care_type" placeholder="e.g. Babysitter"></label>
+    <label>City<input name="city" placeholder="City"></label>
+    <div class="form-actions"><button class="btn" type="submit">Search</button></div>
+  </form>
+
+  {% if caregivers is defined %}
+    <h3>Results</h3>
+    <div class="cards">
+      {% for c in caregivers %}
+        <div class="card">
+          <div class="card-header"><strong>{{ c.user.given_name }} {{ c.user.surname }}</strong></div>
+          <div class="card-body">
+            <p><strong>Type:</strong> {{ c.caregiving_type }}</p>
+            <p><strong>City:</strong> {{ c.user.city }}</p>
+            <p><strong>Rate:</strong> {{ c.hourly_rate }}</p>
+            <a class="btn small" href="/profile/{{ c.caregiver_user_id }}">View Profile</a>
+          </div>
+        </div>
+      {% else %}
+        <p>No caregivers found.</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% else %}
+    <p>Only registered members may search for caregivers.</p>
+    <p><a class="btn" href="/login">Log in</a> or <a class="btn outline" href="/register/member">Register as member</a></p>
+  {% endif %}
+{% endblock %}

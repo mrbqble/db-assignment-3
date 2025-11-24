@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% if caregiver and user %}
+    <h2>{{ user.given_name }} {{ user.surname }}</h2>
+    <p><strong>Type:</strong> {{ caregiver.caregiving_type }}</p>
+    <p><strong>City:</strong> {{ user.city }}</p>
+    {% if show_contact %}
+      <p><strong>Phone:</strong> {{ user.phone_number }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+    {% else %}
+      <p><strong>Contact:</strong> Contact information is available only after an appointment is accepted.</p>
+    {% endif %}
+    <p><strong>Rate:</strong> {{ caregiver.hourly_rate }}</p>
+    <p>{{ user.profile_description }}</p>
+
+    <h3>Request an appointment</h3>
+    <form method="post" class="form">
+      {% if session.get('user_role') == 'member' and session.get('user_id') %}
+        <p>Requesting as: {{ session.get('user_name') }} (id={{ session.get('user_id') }})</p>
+      {% else %}
+        <label>Member ID (your id)<input name="member_id" required></label>
+      {% endif %}
+      <label>Date<input name="date" type="date"></label>
+      <label>Time<input name="time" type="time"></label>
+      <label>Hours<input name="hours" type="number" step="0.5"></label>
+      <div class="form-actions"><button class="btn" type="submit">Request</button></div>
+    </form>
+  {% else %}
+    <p>Caregiver not found.</p>
+  {% endif %}
+{% endblock %}
