@@ -1,27 +1,24 @@
 from sqlalchemy import create_engine, text, Connection
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 queries: list[dict[str, str]] = [
     {
         "title": "1. Create all tables",
         "sql": """
-            DROP TABLE IF EXISTS appointment CASCADE;
-            DROP TABLE IF EXISTS job_application CASCADE;
-            DROP TABLE IF EXISTS job CASCADE;
-            DROP TABLE IF EXISTS address CASCADE;
-            DROP TABLE IF EXISTS member CASCADE;
-            DROP TABLE IF EXISTS caregiver CASCADE;
-            DROP TABLE IF EXISTS users CASCADE;
-
-            DROP TABLE IF EXISTS "USER" CASCADE;
-            DROP TABLE IF EXISTS "CAREGIVER" CASCADE;
-            DROP TABLE IF EXISTS "MEMBER" CASCADE;
-            DROP TABLE IF EXISTS "ADDRESS" CASCADE;
-            DROP TABLE IF EXISTS "JOB" CASCADE;
-            DROP TABLE IF EXISTS "JOB_APPLICATION" CASCADE;
-            DROP TABLE IF EXISTS "APPOINTMENT" CASCADE;
+            DROP TABLE IF EXISTS appointment;
+            DROP TABLE IF EXISTS job_application;
+            DROP TABLE IF EXISTS job;
+            DROP TABLE IF EXISTS address;
+            DROP TABLE IF EXISTS member;
+            DROP TABLE IF EXISTS caregiver;
+            DROP TABLE IF EXISTS users;
 
             CREATE TABLE users (
-                user_id            SERIAL PRIMARY KEY,
+                user_id            INT AUTO_INCREMENT PRIMARY KEY,
                 email              VARCHAR(255) UNIQUE NOT NULL,
                 given_name         VARCHAR(50) NOT NULL,
                 surname            VARCHAR(50) NOT NULL,
@@ -69,11 +66,11 @@ queries: list[dict[str, str]] = [
             );
 
             CREATE TABLE job (
-                job_id                 SERIAL PRIMARY KEY,
+                job_id                 INT AUTO_INCREMENT PRIMARY KEY,
                 member_user_id         INTEGER NOT NULL,
                 required_caregiving_type VARCHAR(50) NOT NULL,
                 other_requirements     TEXT,
-                date_posted            DATE NOT NULL DEFAULT CURRENT_DATE,
+                date_posted            DATE NOT NULL DEFAULT (CURRENT_DATE),
                 CONSTRAINT fk_job_member
                     FOREIGN KEY (member_user_id)
                     REFERENCES member(member_user_id)
@@ -85,7 +82,7 @@ queries: list[dict[str, str]] = [
             CREATE TABLE job_application (
                 caregiver_user_id  INTEGER NOT NULL,
                 job_id             INTEGER NOT NULL,
-                date_applied       DATE NOT NULL DEFAULT CURRENT_DATE,
+                date_applied       DATE NOT NULL DEFAULT (CURRENT_DATE),
                 PRIMARY KEY (caregiver_user_id, job_id),
                 CONSTRAINT fk_jobapp_caregiver
                     FOREIGN KEY (caregiver_user_id)
@@ -98,7 +95,7 @@ queries: list[dict[str, str]] = [
             );
 
             CREATE TABLE appointment (
-                appointment_id     SERIAL PRIMARY KEY,
+                appointment_id     INT AUTO_INCREMENT PRIMARY KEY,
                 caregiver_user_id  INTEGER NOT NULL,
                 member_user_id     INTEGER NOT NULL,
                 appointment_date   DATE NOT NULL,
@@ -116,7 +113,7 @@ queries: list[dict[str, str]] = [
                 CONSTRAINT check_appointment_status
                     CHECK (status IN ('pending', 'accepted', 'declined')),
                 CONSTRAINT check_work_hours_positive
-                    CHECK (work_hours > 0)
+                    CHECK (work_hours > 0 AND work_hours <= 24)
             );
         """
     },
@@ -259,8 +256,8 @@ queries: list[dict[str, str]] = [
         "title": "5.1 Select caregiver and member names for accepted appointments",
         "sql": """
             SELECT
-                cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
-                m_user.given_name || ' ' || m_user.surname AS member_name
+                CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
+                CONCAT(m_user.given_name, ' ', m_user.surname) AS member_name
             FROM appointment a
             JOIN users cg_user ON a.caregiver_user_id = cg_user.user_id
             JOIN users m_user ON a.member_user_id = m_user.user_id
@@ -272,7 +269,7 @@ queries: list[dict[str, str]] = [
         "sql": """
             SELECT job_id
             FROM job
-            WHERE other_requirements ILIKE '%soft-spoken%';
+            WHERE LOWER(other_requirements) LIKE LOWER('%soft-spoken%');
         """
     },
     {
@@ -288,7 +285,7 @@ queries: list[dict[str, str]] = [
         "title": "5.4 List members looking for Elderly Care in Astana with 'No pets.' rule",
         "sql": """
             SELECT DISTINCT
-                u.given_name || ' ' || u.surname AS member_name,
+                CONCAT(u.given_name, ' ', u.surname) AS member_name,
                 u.email,
                 m.house_rules
             FROM member m
@@ -297,7 +294,7 @@ queries: list[dict[str, str]] = [
             JOIN job j ON m.member_user_id = j.member_user_id
             WHERE j.required_caregiving_type = 'caregiver for elderly'
                 AND a.town = 'Astana'
-                AND m.house_rules ILIKE '%No pets.%';
+                AND LOWER(m.house_rules) LIKE LOWER('%No pets.%');
         """
     },
     {
@@ -305,7 +302,7 @@ queries: list[dict[str, str]] = [
         "sql": """
             SELECT
                 j.job_id,
-                u.given_name || ' ' || u.surname AS member_name,
+                CONCAT(u.given_name, ' ', u.surname) AS member_name,
                 COUNT(ja.caregiver_user_id) AS applicant_count
             FROM job j
             JOIN member m ON j.member_user_id = m.member_user_id
@@ -319,7 +316,7 @@ queries: list[dict[str, str]] = [
         "title": "6.2 Total hours spent by caregivers for all accepted appointments",
         "sql": """
             SELECT
-                cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
+                CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
                 SUM(a.work_hours) AS total_hours
             FROM appointment a
             JOIN caregiver c ON a.caregiver_user_id = c.caregiver_user_id
@@ -343,7 +340,7 @@ queries: list[dict[str, str]] = [
         "title": "6.4 Caregivers who earn above average based on accepted appointments",
         "sql": """
             SELECT
-                cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
+                CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
                 SUM(c.hourly_rate * a.work_hours) AS total_earnings
             FROM appointment a
             JOIN caregiver c ON a.caregiver_user_id = c.caregiver_user_id
@@ -364,8 +361,8 @@ queries: list[dict[str, str]] = [
         "sql": """
             SELECT
                 a.appointment_id,
-                cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
-                m_user.given_name || ' ' || m_user.surname AS member_name,
+                CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
+                CONCAT(m_user.given_name, ' ', m_user.surname) AS member_name,
                 a.work_hours,
                 c.hourly_rate,
                 (c.hourly_rate * a.work_hours) AS total_cost
@@ -386,9 +383,9 @@ queries: list[dict[str, str]] = [
                 j.required_caregiving_type,
                 j.other_requirements,
                 j.date_posted,
-                m_user.given_name || ' ' || m_user.surname AS job_poster_name,
+                CONCAT(m_user.given_name, ' ', m_user.surname) AS job_poster_name,
                 ja.caregiver_user_id,
-                cg_user.given_name || ' ' || cg_user.surname AS applicant_name,
+                CONCAT(cg_user.given_name, ' ', cg_user.surname) AS applicant_name,
                 c.caregiving_type,
                 c.hourly_rate,
                 ja.date_applied
@@ -410,28 +407,90 @@ queries: list[dict[str, str]] = [
 ]
 
 
+def split_sql_statements(sql: str) -> list[str]:
+    """
+    Split SQL string into individual statements, respecting quoted strings.
+    This prevents splitting on semicolons inside string literals.
+    """
+    statements: list[str] = []
+    current_statement: list[str] = []
+    in_single_quote = False
+    in_double_quote = False
+    i = 0
+
+    while i < len(sql):
+        char = sql[i]
+
+        # Handle escaped quotes
+        if char == '\\' and i + 1 < len(sql):
+            current_statement.append(char)
+            current_statement.append(sql[i + 1])
+            i += 2
+            continue
+
+        # Toggle quote states
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+
+        # Split on semicolon only if not inside quotes
+        if char == ';' and not in_single_quote and not in_double_quote:
+            statement = ''.join(current_statement).strip()
+            if statement:
+                statements.append(statement)
+            current_statement = []
+        else:
+            current_statement.append(char)
+
+        i += 1
+
+    # Add the last statement if any
+    statement = ''.join(current_statement).strip()
+    if statement:
+        statements.append(statement)
+
+    return statements
+
+
 def execute_query(conn: Connection, sql: str, title: str):
     print(f"\n{title}")
     print("-" * 80)
 
     try:
-        result = conn.execute(text(sql))
+        # Split SQL into individual statements, respecting quoted strings
+        # This is required for PyMySQL which doesn't support multi-statement execution
+        statements = split_sql_statements(sql)
+
+        last_result = None
+        for i, statement in enumerate(statements, 1):
+            if statement:
+                try:
+                    last_result = conn.execute(text(statement))
+                except Exception as stmt_error:
+                    print(
+                        f"  Error in statement {i}/{len(statements)}: {str(stmt_error)[:100]}")
+                    raise
+
         conn.commit()
 
-        try:
-            rows = result.fetchall()
-            if rows:
-                for row in rows:
-                    print(row)
-            else:
-                print("(No results)")
+        # Try to fetch results from the last statement (if it was a SELECT)
+        if last_result:
+            try:
+                rows = last_result.fetchall()
+                if rows:
+                    for row in rows:
+                        print(row)
+                else:
+                    print("(No results)")
+            except Exception:
+                # Not a SELECT statement, check rowcount
+                rowCount = last_result.rowcount
+                if rowCount > 0:
+                    print(f"  Rows affected: {rowCount}")
+                else:
+                    print("(No rows affected)")
 
-        except Exception as e:
-            rowCount = result.rowcount
-            if rowCount > 0:
-                print(f"  Rows affected: {rowCount}")
-            else:
-                print("(No rows affected)")
         print("✓ Query executed successfully!")
     except Exception as e:
         conn.rollback()
@@ -439,7 +498,16 @@ def execute_query(conn: Connection, sql: str, title: str):
 
 
 def main():
-    database_url = "postgresql+psycopg://postgres:2148@localhost:5432/db-assignment"
+    # Get database URL from environment variable, or use default MySQL format
+    database_url = os.getenv(
+        'DATABASE_URL', 'mysql+pymysql://username:password@host:port/database_name')
+    # Convert postgresql:// to mysql+pymysql:// if needed (for backward compatibility)
+    if database_url.startswith('postgresql://'):
+        database_url = database_url.replace(
+            'postgresql://', 'mysql+pymysql://', 1)
+    elif database_url.startswith('postgresql+psycopg://'):
+        database_url = database_url.replace(
+            'postgresql+psycopg://', 'mysql+pymysql://', 1)
 
     try:
         engine = create_engine(database_url)

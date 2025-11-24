@@ -4,9 +4,9 @@ SELECT
     j.required_caregiving_type,
     j.other_requirements,
     j.date_posted,
-    m_user.given_name || ' ' || m_user.surname AS job_poster_name,
+    CONCAT(m_user.given_name, ' ', m_user.surname) AS job_poster_name,
     ja.caregiver_user_id,
-    cg_user.given_name || ' ' || cg_user.surname AS applicant_name,
+    CONCAT(cg_user.given_name, ' ', cg_user.surname) AS applicant_name,
     c.caregiving_type,
     c.hourly_rate,
     ja.date_applied

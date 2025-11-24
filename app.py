@@ -4,8 +4,8 @@ import re
 from flask import Flask, render_template, flash, redirect, url_for, request
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import ProgrammingError, IntegrityError
-from sqlalchemy import exists, select, or_, text, func
-from datetime import date, time
+from sqlalchemy import exists, select, or_, func
+from datetime import date, time, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -77,9 +77,22 @@ def validate_work_hours(hours_str: str) -> tuple[bool, float | None, str | None]
         hours_value = float(hours_str)
         if hours_value <= 0:
             return False, None, "Work hours must be a positive number."
+        if hours_value > 24:
+            return False, None, "Work hours cannot exceed 24 hours."
         return True, hours_value, None
     except ValueError:
         return False, None, "Work hours must be a valid number."
+
+
+def validate_appointment_date(appointment_date: date) -> tuple[bool, str | None]:
+    """Validate that appointment date is at least tomorrow - returns (is_valid, error_message)"""
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+
+    if appointment_date <= today:
+        return False, "Appointment date must be at least tomorrow (later than today)."
+
+    return True, None
 
 
 def check_email_uniqueness(email: str, exclude_user_id: int | None = None) -> tuple[bool, str | None]:
@@ -105,19 +118,11 @@ def check_phone_uniqueness(phone: str, exclude_user_id: int | None = None) -> tu
 
 
 def reset_user_sequence() -> bool:
-    """Reset users sequence to max ID - handles both possible sequence names"""
-    max_id = db.session.query(func.max(Users.user_id)).scalar()
-    if max_id:
-        # Try both possible sequence names
-        for seq_name in ['users_user_id_seq', '"USER_user_id_seq"']:
-            try:
-                db.session.execute(
-                    text(f"SELECT setval('{seq_name}', {max_id}, true)"))
-                db.session.commit()
-                return True
-            except:
-                continue
-    return False
+    """Reset auto-increment for MySQL - MySQL handles AUTO_INCREMENT automatically"""
+    # MySQL handles AUTO_INCREMENT automatically, so this function is kept
+    # for compatibility but does nothing. AUTO_INCREMENT will automatically
+    # use the next available ID based on the maximum existing ID.
+    return True
 
 
 def get_form_field(field: str, default: str = '') -> str:
@@ -170,10 +175,16 @@ def apply_numeric_range_filter(query, field, min_value: str | None, max_value: s
 
 # Database configuration
 database_url = os.getenv('DATABASE_URL')
+# Convert postgresql:// to mysql+pymysql:// if needed (for backward compatibility)
+if database_url and database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'mysql+pymysql://', 1)
+elif database_url and database_url.startswith('postgresql+psycopg://'):
+    database_url = database_url.replace(
+        'postgresql+psycopg://', 'mysql+pymysql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = os.getenv(
-    'FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+    'FLASK_SECRET_KEY', '2-python-projects-in-a-row-i-am-sick-of-this-shit')
 
 # Initialize SQLAlchemy with app
 db.init_app(app)
@@ -249,48 +260,49 @@ def users():
     # Apply search filter (name, email, or phone number)
     if search_term and len(search_term) > 0:
         search_pattern = f'%{search_term}%'
+        # Use LOWER() for case-insensitive search (MySQL compatible)
         query = query.filter(
             or_(
-                Users.given_name.ilike(search_pattern),
-                Users.surname.ilike(search_pattern),
-                Users.email.ilike(search_pattern),
-                Users.phone_number.ilike(search_pattern)
+                func.lower(Users.given_name).like(func.lower(search_pattern)),
+                func.lower(Users.surname).like(func.lower(search_pattern)),
+                func.lower(Users.email).like(func.lower(search_pattern)),
+                func.lower(Users.phone_number).like(func.lower(search_pattern))
             )
         )
 
-        # Apply city filter
-        if city_filter:
-            query = query.filter(Users.city == city_filter)
+    # Apply city filter
+    if city_filter:
+        query = query.filter(Users.city == city_filter)
 
-        # Apply status filter using EXISTS subqueries
-        if status_filter == 'caregiver':
-            query = query.filter(exists(select(1).where(
-                Caregiver.caregiver_user_id == Users.user_id)))
-        elif status_filter == 'member':
-            query = query.filter(exists(select(1).where(
-                Member.member_user_id == Users.user_id)))
-        elif status_filter == 'both':
-            query = query.filter(
-                exists(select(1).where(
-                    Caregiver.caregiver_user_id == Users.user_id)),
-                exists(select(1).where(
-                    Member.member_user_id == Users.user_id))
-            )
-        elif status_filter == 'none':
-            query = query.filter(
-                ~exists(select(1).where(
-                    Caregiver.caregiver_user_id == Users.user_id)),
-                ~exists(select(1).where(
-                    Member.member_user_id == Users.user_id))
-            )
+    # Apply status filter using EXISTS subqueries
+    if status_filter == 'caregiver':
+        query = query.filter(exists(select(1).where(
+            Caregiver.caregiver_user_id == Users.user_id)))
+    elif status_filter == 'member':
+        query = query.filter(exists(select(1).where(
+            Member.member_user_id == Users.user_id)))
+    elif status_filter == 'both':
+        query = query.filter(
+            exists(select(1).where(
+                Caregiver.caregiver_user_id == Users.user_id)),
+            exists(select(1).where(
+                Member.member_user_id == Users.user_id))
+        )
+    elif status_filter == 'none':
+        query = query.filter(
+            ~exists(select(1).where(
+                Caregiver.caregiver_user_id == Users.user_id)),
+            ~exists(select(1).where(
+                Member.member_user_id == Users.user_id))
+        )
 
-        users_list = query.order_by(Users.user_id).all()
+    users_list = query.order_by(Users.user_id).all()
 
-        # Get unique cities for filter dropdown (optimized with distinct)
-        cities = sorted([c[0] for c in db.session.query(
-            Users.city).distinct().filter(Users.city.isnot(None)).all()])
+    # Get unique cities for filter dropdown (optimized with distinct)
+    cities = sorted([c[0] for c in db.session.query(
+        Users.city).distinct().filter(Users.city.isnot(None)).all()])
 
-        return render_template('users.html', users=users_list, cities=cities, selected_city=city_filter, selected_status=status_filter, search_term=search_term)
+    return render_template('users.html', users=users_list, cities=cities, selected_city=city_filter, selected_status=status_filter, search_term=search_term)
 
 
 @app.route('/caregivers')
@@ -2022,6 +2034,15 @@ def create_appointment():
                                            caregiver_choices=caregiver_choices,
                                            member_choices=member_choices)
 
+                # Validate appointment date is at least tomorrow
+                is_valid_date, date_error_msg = validate_appointment_date(
+                    appointment_date_value)
+                if not is_valid_date:
+                    flash(date_error_msg, 'error')
+                    return render_template('create_appointment.html',
+                                           caregiver_choices=caregiver_choices,
+                                           member_choices=member_choices)
+
                 # Validate appointment time
                 appointment_time_str = request.form.get(
                     'appointment_time', '').strip()
@@ -2112,13 +2133,24 @@ def edit_appointment(appointment_id):
                                            appointment_statuses=APPOINTMENT_STATUSES)
 
                 try:
-                    appointment.appointment_date = date.fromisoformat(
+                    appointment_date_value = date.fromisoformat(
                         appointment_date_str)
                 except ValueError:
                     flash('Invalid date format. Please use YYYY-MM-DD format.', 'error')
                     return render_template('edit_appointment.html',
                                            appointment=appointment,
                                            appointment_statuses=APPOINTMENT_STATUSES)
+
+                # Validate appointment date is at least tomorrow
+                is_valid_date, date_error_msg = validate_appointment_date(
+                    appointment_date_value)
+                if not is_valid_date:
+                    flash(date_error_msg, 'error')
+                    return render_template('edit_appointment.html',
+                                           appointment=appointment,
+                                           appointment_statuses=APPOINTMENT_STATUSES)
+
+                appointment.appointment_date = appointment_date_value
 
                 # Validate appointment time
                 appointment_time_str = request.form.get(

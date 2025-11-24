@@ -1,3 +1,3 @@
 SELECT job_id
 FROM job
-WHERE other_requirements ILIKE '%soft-spoken%';
+WHERE LOWER(other_requirements) LIKE LOWER('%soft-spoken%');

@@ -1,5 +1,5 @@
 SELECT
-    cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
+    CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
     SUM(c.hourly_rate * a.work_hours) AS total_earnings
 FROM appointment a
 JOIN caregiver c ON a.caregiver_user_id = c.caregiver_user_id

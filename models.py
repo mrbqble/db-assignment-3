@@ -141,6 +141,10 @@ class Appointment(db.Model):
             "status IN ('pending', 'accepted', 'declined')",
             name='check_appointment_status'
         ),
+        CheckConstraint(
+            "work_hours > 0 AND work_hours <= 24",
+            name='check_work_hours_positive'
+        ),
     )
     appointment_id = Column(Integer, primary_key=True, autoincrement=True)
     caregiver_user_id = Column(Integer, ForeignKey(
@@ -162,4 +166,13 @@ class Appointment(db.Model):
         if value not in APPOINTMENT_STATUSES:
             raise ValueError(
                 f"status must be one of {APPOINTMENT_STATUSES}, got '{value}'")
+        return value
+
+    @validates('work_hours')
+    def validate_work_hours(self, key: str, value: float) -> float:
+        """Validate work hours - must be positive and not exceed 24 hours"""
+        if value <= 0:
+            raise ValueError("Work hours must be a positive number.")
+        if value > 24:
+            raise ValueError("Work hours cannot exceed 24 hours.")
         return value

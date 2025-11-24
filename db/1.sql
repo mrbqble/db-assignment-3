@@ -1,14 +1,14 @@
 
-DROP TABLE IF EXISTS appointment CASCADE;
-DROP TABLE IF EXISTS job_application CASCADE;
-DROP TABLE IF EXISTS job CASCADE;
-DROP TABLE IF EXISTS address CASCADE;
-DROP TABLE IF EXISTS member CASCADE;
-DROP TABLE IF EXISTS caregiver CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS appointment;
+DROP TABLE IF EXISTS job_application;
+DROP TABLE IF EXISTS job;
+DROP TABLE IF EXISTS address;
+DROP TABLE IF EXISTS member;
+DROP TABLE IF EXISTS caregiver;
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
-    user_id            SERIAL PRIMARY KEY,
+    user_id            INT AUTO_INCREMENT PRIMARY KEY,
     email              VARCHAR(255) UNIQUE NOT NULL,
     given_name         VARCHAR(50) NOT NULL,
     surname            VARCHAR(50) NOT NULL,
@@ -56,11 +56,11 @@ CREATE TABLE address (
 );
 
 CREATE TABLE job (
-    job_id                 SERIAL PRIMARY KEY,
+    job_id                 INT AUTO_INCREMENT PRIMARY KEY,
     member_user_id         INTEGER NOT NULL,
     required_caregiving_type VARCHAR(50) NOT NULL,
     other_requirements     TEXT,
-    date_posted            DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_posted            DATE NOT NULL DEFAULT (CURRENT_DATE),
     CONSTRAINT fk_job_member
         FOREIGN KEY (member_user_id)
         REFERENCES member(member_user_id)
@@ -72,7 +72,7 @@ CREATE TABLE job (
 CREATE TABLE job_application (
     caregiver_user_id  INTEGER NOT NULL,
     job_id             INTEGER NOT NULL,
-    date_applied       DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_applied       DATE NOT NULL DEFAULT (CURRENT_DATE),
     PRIMARY KEY (caregiver_user_id, job_id),
     CONSTRAINT fk_jobapp_caregiver
         FOREIGN KEY (caregiver_user_id)
@@ -85,7 +85,7 @@ CREATE TABLE job_application (
 );
 
 CREATE TABLE appointment (
-    appointment_id     SERIAL PRIMARY KEY,
+    appointment_id     INT AUTO_INCREMENT PRIMARY KEY,
     caregiver_user_id  INTEGER NOT NULL,
     member_user_id     INTEGER NOT NULL,
     appointment_date   DATE NOT NULL,
@@ -103,5 +103,5 @@ CREATE TABLE appointment (
     CONSTRAINT check_appointment_status
         CHECK (status IN ('pending', 'accepted', 'declined')),
     CONSTRAINT check_work_hours_positive
-        CHECK (work_hours > 0)
+        CHECK (work_hours > 0 AND work_hours <= 24)
 );

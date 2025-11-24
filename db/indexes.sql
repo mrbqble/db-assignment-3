@@ -1,5 +1,7 @@
 -- Database indexes for optimization
 -- These indexes improve query performance on frequently filtered/searched columns
+-- Note: IF NOT EXISTS is supported in MySQL 5.7.4+ and MariaDB 10.0.5+
+-- For older MySQL versions, remove IF NOT EXISTS and handle duplicate index errors manually
 
 -- Users table indexes
 CREATE INDEX IF NOT EXISTS idx_users_city ON users(city);

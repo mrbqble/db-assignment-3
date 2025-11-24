@@ -1,7 +1,7 @@
 SELECT
     a.appointment_id,
-    cg_user.given_name || ' ' || cg_user.surname AS caregiver_name,
-    m_user.given_name || ' ' || m_user.surname AS member_name,
+    CONCAT(cg_user.given_name, ' ', cg_user.surname) AS caregiver_name,
+    CONCAT(m_user.given_name, ' ', m_user.surname) AS member_name,
     a.work_hours,
     c.hourly_rate,
     (c.hourly_rate * a.work_hours) AS total_cost
