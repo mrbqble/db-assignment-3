@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Create User - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Create User</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email"
+               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+               title="Please enter a valid email address (e.g., user@example.com)"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label for="given_name">Given Name *</label>
+        <input type="text" id="given_name" name="given_name" required>
+    </div>
+
+    <div class="form-group">
+        <label for="surname">Surname *</label>
+        <input type="text" id="surname" name="surname" required>
+    </div>
+
+    <div class="form-group">
+        <label for="city">City</label>
+        <input type="text" id="city" name="city">
+    </div>
+
+    <div class="form-group">
+        <label for="phone_number">Phone Number *</label>
+        <input type="tel" id="phone_number" name="phone_number"
+               pattern="[\d\s\-\+\(\)]+"
+               title="Please enter a valid phone number (digits, spaces, hyphens, parentheses, or + sign)"
+               minlength="7" maxlength="20" required>
+    </div>
+
+    <div class="form-group">
+        <label for="profile_description">Profile Description</label>
+        <textarea id="profile_description" name="profile_description"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password"
+               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&amp;*()_+\-=\[\]{};':&quot;\\|,.<>\/?]).{8,}$"
+               title="Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
+               required>
+        <small style="display: block; margin-top: 5px; color: #6c757d; font-size: 0.9em;">
+            Must be at least 8 characters with: 1 uppercase, 1 lowercase, 1 digit, and 1 special character
+        </small>
+    </div>
+
+    <h3 style="margin: 30px 0 15px 0; color: #667eea;">User Roles</h3>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #495057;">
+            <input type="checkbox" id="is_caregiver" name="is_caregiver" onchange="toggleCaregiverFields()" style="width: auto; margin: 0; cursor: pointer;">
+            <span>Create as Caregiver</span>
+        </label>
+    </div>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #495057;">
+            <input type="checkbox" id="is_member" name="is_member" onchange="toggleMemberFields()" style="width: auto; margin: 0; cursor: pointer;">
+            <span>Create as Member</span>
+        </label>
+    </div>
+
+    <div id="caregiver_fields" style="display: none;">
+        <h3 style="margin: 30px 0 15px 0; color: #667eea;">Caregiver Information</h3>
+        <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender">
+                <option value="">-- Select --</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="caregiving_type">Caregiving Type *</label>
+            <select id="caregiving_type" name="caregiving_type">
+                <option value="">-- Select --</option>
+                {% for type in caregiving_types %}
+                <option value="{{ type }}">{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="hourly_rate">Hourly Rate *</label>
+            <input type="number" id="hourly_rate" name="hourly_rate" step="0.01" min="0">
+        </div>
+
+        <div class="form-group">
+            <label for="photo">Photo URL</label>
+            <input type="text" id="photo" name="photo">
+        </div>
+    </div>
+
+    <div id="member_fields" style="display: none;">
+        <h3 style="margin: 30px 0 15px 0; color: #667eea;">Member Information</h3>
+        <div class="form-group">
+            <label for="house_rules">House Rules</label>
+            <textarea id="house_rules" name="house_rules"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="dependent_description">Dependent Description</label>
+            <textarea id="dependent_description" name="dependent_description"></textarea>
+        </div>
+
+        <h4 style="margin: 20px 0 15px 0; color: #667eea;">Address *</h4>
+        <div class="form-group">
+            <label for="house_number">House Number *</label>
+            <input type="text" id="house_number" name="house_number">
+        </div>
+
+        <div class="form-group">
+            <label for="street">Street *</label>
+            <input type="text" id="street" name="street">
+        </div>
+
+        <div class="form-group">
+            <label for="town">Town *</label>
+            <input type="text" id="town" name="town">
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-edit">Create User</button>
+        <a href="{{ url_for('users') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+
+<script>
+function toggleCaregiverFields() {
+    const checkbox = document.getElementById('is_caregiver');
+    const fields = document.getElementById('caregiver_fields');
+    if (checkbox.checked) {
+        fields.style.display = 'block';
+        // Make required fields actually required
+        document.getElementById('caregiving_type').required = true;
+        document.getElementById('hourly_rate').required = true;
+    } else {
+        fields.style.display = 'none';
+        // Remove required attribute
+        document.getElementById('caregiving_type').required = false;
+        document.getElementById('hourly_rate').required = false;
+        // Clear values
+        document.getElementById('caregiving_type').value = '';
+        document.getElementById('hourly_rate').value = '';
+        document.getElementById('gender').value = '';
+        document.getElementById('photo').value = '';
+    }
+}
+
+function toggleMemberFields() {
+    const checkbox = document.getElementById('is_member');
+    const fields = document.getElementById('member_fields');
+    if (checkbox.checked) {
+        fields.style.display = 'block';
+        // Make required fields actually required
+        document.getElementById('house_number').required = true;
+        document.getElementById('street').required = true;
+        document.getElementById('town').required = true;
+    } else {
+        fields.style.display = 'none';
+        // Remove required attribute
+        document.getElementById('house_number').required = false;
+        document.getElementById('street').required = false;
+        document.getElementById('town').required = false;
+        // Clear values
+        document.getElementById('house_rules').value = '';
+        document.getElementById('dependent_description').value = '';
+        document.getElementById('house_number').value = '';
+        document.getElementById('street').value = '';
+        document.getElementById('town').value = '';
+    }
+}
+</script>
+{% endblock %}
+

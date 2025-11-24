@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Create Caregiver - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Create Caregiver</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <h3 style="margin-bottom: 15px; color: #667eea;">User Information</h3>
+    <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}"
+               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+               title="Please enter a valid email address (e.g., user@example.com)"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label for="given_name">Given Name *</label>
+        <input type="text" id="given_name" name="given_name" value="{{ request.form.get('given_name', '') }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="surname">Surname *</label>
+        <input type="text" id="surname" name="surname" value="{{ request.form.get('surname', '') }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="city">City</label>
+        <input type="text" id="city" name="city" value="{{ request.form.get('city', '') }}">
+    </div>
+
+    <div class="form-group">
+        <label for="phone_number">Phone Number *</label>
+        <input type="tel" id="phone_number" name="phone_number" value="{{ request.form.get('phone_number', '') }}"
+               pattern="[\d\s\-\+\(\)]+"
+               title="Please enter a valid phone number (digits, spaces, hyphens, parentheses, or + sign)"
+               minlength="7" maxlength="20" required>
+    </div>
+
+    <div class="form-group">
+        <label for="profile_description">Profile Description</label>
+        <textarea id="profile_description" name="profile_description">{{ request.form.get('profile_description', '') }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password"
+               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&amp;*()_+\-=\[\]{};':&quot;\\|,.<>\/?]).{8,}$"
+               title="Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
+               required>
+        <small style="display: block; margin-top: 5px; color: #6c757d; font-size: 0.9em;">
+            Must be at least 8 characters with: 1 uppercase, 1 lowercase, 1 digit, and 1 special character
+        </small>
+    </div>
+
+    <h3 style="margin: 30px 0 15px 0; color: #667eea;">Caregiver Information</h3>
+    <div class="form-group">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+            <option value="">-- Select --</option>
+            <option value="Male" {% if request.form.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if request.form.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if request.form.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="caregiving_type">Caregiving Type *</label>
+        <select id="caregiving_type" name="caregiving_type" required>
+            <option value="">-- Select --</option>
+            {% for type in caregiving_types %}
+            <option value="{{ type }}" {% if request.form.get('caregiving_type') == type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="hourly_rate">Hourly Rate *</label>
+        <input type="number" id="hourly_rate" name="hourly_rate" step="0.01" min="0" value="{{ request.form.get('hourly_rate', '') }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="photo">Photo URL</label>
+        <input type="text" id="photo" name="photo" value="{{ request.form.get('photo', '') }}">
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-create">Create Caregiver</button>
+        <a href="{{ url_for('caregivers') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

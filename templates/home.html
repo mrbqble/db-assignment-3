@@ -1,26 +1,75 @@
-{% extends 'base.html' %}
-{% block content %}
-  <section class="hero">
-    <h1>Find trusted caregivers near you</h1>
-    <p>Search caregivers by type and city, post jobs, and manage appointments.</p>
-    <div class="actions">
-      <a class="btn" href="/search">Search Caregivers</a>
-      <a class="btn outline" href="/jobs">View Jobs</a>
-    </div>
-  </section>
+{% extends "base.html" %}
 
-  <section class="info-grid">
-    <div>
-      <h3>For Families</h3>
-      <p>Post a job, search caregivers, make appointments and manage requests.</p>
+{% block title %}Dashboard - Database Management{% endblock %}
+
+{% block content %}
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <h3>{{ stats.users }}</h3>
+        <p>Total Users</p>
     </div>
-    <div>
-      <h3>For Caregivers</h3>
-      <p>Create a profile, apply to jobs, and respond to appointment requests.</p>
+    <div class="stat-card">
+        <h3>{{ stats.caregivers }}</h3>
+        <p>Caregivers</p>
     </div>
-    <div>
-      <h3>Simple & Minimal</h3>
-      <p>Basic UI to test CRUD operations and demonstrate functionality.</p>
+    <div class="stat-card">
+        <h3>{{ stats.members }}</h3>
+        <p>Members</p>
     </div>
-  </section>
+    <div class="stat-card">
+        <h3>{{ stats.addresses }}</h3>
+        <p>Addresses</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.jobs }}</h3>
+        <p>Active Jobs</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.job_applications }}</h3>
+        <p>Job Applications</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.appointments }}</h3>
+        <p>Appointments</p>
+    </div>
+</div>
+
+<h2 style="margin-bottom: 20px; color: #495057;">Quick Overview</h2>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">Recent Users</h3>
+        {% if recent_users %}
+            <ul style="list-style: none;">
+                {% for user in recent_users[:5] %}
+                <li style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <strong>{{ user.given_name }} {{ user.surname }}</strong><br>
+                    <small style="color: #6c757d;">{{ user.email }}</small>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: #6c757d;">No users found</p>
+        {% endif %}
+    </div>
+
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">Recent Appointments</h3>
+        {% if recent_appointments %}
+            <ul style="list-style: none;">
+                {% for appointment in recent_appointments[:5] %}
+                <li style="padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <strong>{{ appointment.appointment_date.strftime('%d/%m/%Y') if appointment.appointment_date else '-' }}</strong><br>
+                    <small style="color: #6c757d;">
+                        Status: <span class="badge badge-{{ 'success' if appointment.status == 'Accepted' else 'warning' }}">{{ appointment.status }}</span>
+                    </small>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p style="color: #6c757d;">No appointments found</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
+

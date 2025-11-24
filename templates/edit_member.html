@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Member - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Edit Member</h2>
+
+<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <p style="margin: 0; color: #495057;"><strong>User:</strong> {{ member.user.given_name }} {{ member.user.surname }} ({{ member.user.email }})</p>
+    <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 0.9em;">To edit user information, please use the <a href="{{ url_for('edit_user', user_id=member.user.user_id) }}">Edit User</a> page.</p>
+</div>
+
+<form method="POST" style="max-width: 600px;">
+    <h3 style="margin-bottom: 15px; color: #667eea;">Member Information</h3>
+    <div class="form-group">
+        <label for="house_rules">House Rules</label>
+        <textarea id="house_rules" name="house_rules">{{ member.house_rules or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="dependent_description">Dependent Description</label>
+        <textarea id="dependent_description" name="dependent_description">{{ member.dependent_description or '' }}</textarea>
+    </div>
+
+    <h3 style="margin: 30px 0 15px 0; color: #667eea;">Address *</h3>
+    <div class="form-group">
+        <label for="house_number">House Number *</label>
+        <input type="text" id="house_number" name="house_number" value="{% if member.address %}{{ member.address.house_number }}{% endif %}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="street">Street *</label>
+        <input type="text" id="street" name="street" value="{% if member.address %}{{ member.address.street }}{% endif %}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="town">Town *</label>
+        <input type="text" id="town" name="town" value="{% if member.address %}{{ member.address.town }}{% endif %}" required>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-edit">Update Member</button>
+        <a href="{{ url_for('members') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+
+

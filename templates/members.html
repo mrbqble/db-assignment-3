@@ -1,0 +1,72 @@
+{% extends "base.html" %} {% block title %}Members - Database Management{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0; color: #495057">Members</h2>
+    <a href="{{ url_for('create_member') }}" class="btn btn-create" style="padding: 10px 20px; text-decoration: none;">Create Member</a>
+</div>
+
+{% if members %}
+<table>
+	<thead>
+		<tr>
+			<th>Member ID</th>
+			<th>Name</th>
+			<th>Address</th>
+			<th>House Rules</th>
+			<th>Dependent Description</th>
+			<th>Job IDs</th>
+			<th>Appointment IDs</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for member in members %}
+		<tr>
+			<td>{{ member.member_user_id }}</td>
+			<td><strong>{{ member.user.given_name }} {{ member.user.surname }}</strong></td>
+			<td>
+				{% if member.address %} {{ member.address.house_number }} {{ member.address.street }}, {{ member.address.town }} {% else %} - {% endif %}
+			</td>
+			<td>{{ member.house_rules[:50] + '...' if member.house_rules and member.house_rules|length > 50 else (member.house_rules or '-') }}</td>
+			<td>
+				{{ member.dependent_description[:50] + '...' if member.dependent_description and member.dependent_description|length > 50 else
+				(member.dependent_description or '-') }}
+			</td>
+			<td>
+				{% if member.jobs %} {% for job in member.jobs %} {{ job.job_id }}{% if not loop.last %}, {% endif %} {% endfor %} {% else %} - {% endif %}
+			</td>
+			<td>
+				{% if member.appointments %} {% for appointment in member.appointments %} {{ appointment.appointment_id }}{% if not loop.last %}, {% endif %}
+				{% endfor %} {% else %} - {% endif %}
+			</td>
+			<td>
+				<div class="action-buttons">
+					<a
+						href="{{ url_for('edit_member', member_id=member.member_user_id) }}"
+						class="btn btn-edit"
+						>Edit</a
+					>
+					<form
+						method="POST"
+						action="{{ url_for('delete_member', member_id=member.member_user_id) }}"
+						style="display: inline"
+						onsubmit="return confirm('Are you sure you want to delete this member?');"
+					>
+						<button
+							type="submit"
+							class="btn btn-delete"
+						>
+							Delete
+						</button>
+					</form>
+				</div>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% else %}
+<div class="empty-state">
+	<h3>No members found</h3>
+	<p>The database is empty.</p>
+</div>
+{% endif %} {% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Appointment - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Edit Appointment</h2>
+<p style="margin-bottom: 20px; color: #6c757d;">
+    Caregiver: <strong>{{ appointment.caregiver.user.given_name }} {{ appointment.caregiver.user.surname }}</strong><br>
+    Member: <strong>{{ appointment.member.user.given_name }} {{ appointment.member.user.surname }}</strong>
+</p>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="appointment_date">Appointment Date *</label>
+        <input type="date" id="appointment_date" name="appointment_date" value="{{ appointment.appointment_date }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="appointment_time">Appointment Time *</label>
+        <input type="time" id="appointment_time" name="appointment_time" value="{{ appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="work_hours">Work Hours *</label>
+        <input type="number" id="work_hours" name="work_hours" step="0.1" value="{{ appointment.work_hours }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="status">Status *</label>
+        <select id="status" name="status" required>
+            {% for status in appointment_statuses %}
+            <option value="{{ status }}" {% if appointment.status == status %}selected{% endif %}>{{ status|title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-edit">Update Appointment</button>
+        <a href="{{ url_for('appointments') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

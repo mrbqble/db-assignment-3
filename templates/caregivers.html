@@ -1,0 +1,173 @@
+{% extends "base.html" %} {% block title %}Caregivers - Database Management{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0; color: #495057">Caregivers</h2>
+    <a href="{{ url_for('create_caregiver') }}" class="btn btn-create" style="padding: 10px 20px; text-decoration: none;">Create Caregiver</a>
+</div>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+	<form method="GET" action="{{ url_for('caregivers') }}" id="filterForm" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="gender" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Gender</label>
+			<select id="gender" name="gender" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Genders</option>
+				{% for gender in genders %}
+				<option value="{{ gender }}" {% if selected_gender == gender %}selected{% endif %}>{{ gender }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="caregiving_type" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Caregiving Type</label>
+			<select id="caregiving_type" name="caregiving_type" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Types</option>
+				{% for type in caregiving_types %}
+				<option value="{{ type }}" {% if selected_caregiving_type == type %}selected{% endif %}>{{ type }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="city" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">City</label>
+			<select id="city" name="city" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Cities</option>
+				{% for city in cities %}
+				<option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="min_rate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Min Hourly Rate ($)</label>
+			<input type="number" id="min_rate" name="min_rate" value="{{ min_rate }}" step="0.01" min="0" placeholder="Min" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="max_rate" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Max Hourly Rate ($)</label>
+			<input type="number" id="max_rate" name="max_rate" value="{{ max_rate }}" step="0.01" min="0" placeholder="Max" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+		</div>
+		<div style="display: flex; gap: 10px;">
+			<a href="{{ url_for('caregivers') }}" class="btn btn-cancel" style="padding: 8px 20px; text-decoration: none;">Clear</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const caregivingTypeSelect = document.getElementById('caregiving_type');
+		const citySelect = document.getElementById('city');
+		const genderSelect = document.getElementById('gender');
+		const minRateInput = document.getElementById('min_rate');
+		const maxRateInput = document.getElementById('max_rate');
+		const filterForm = document.getElementById('filterForm');
+
+		caregivingTypeSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		citySelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		genderSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		// Submit on blur (when user leaves the field) or Enter key
+		minRateInput.addEventListener('blur', function() {
+			if (minRateInput.value || maxRateInput.value) {
+				filterForm.submit();
+			}
+		});
+
+		maxRateInput.addEventListener('blur', function() {
+			if (minRateInput.value || maxRateInput.value) {
+				filterForm.submit();
+			}
+		});
+
+		minRateInput.addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				filterForm.submit();
+			}
+		});
+
+		maxRateInput.addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				filterForm.submit();
+			}
+		});
+	});
+</script>
+
+{% if caregivers %}
+<table>
+	<thead>
+		<tr>
+			<th>Caregiver ID</th>
+			<th>Name</th>
+			<th>Gender</th>
+			<th>Caregiving Type</th>
+			<th>Hourly Rate</th>
+			<th>Photo</th>
+			<th>Appointment IDs</th>
+			<th>Job Application IDs</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for caregiver in caregivers %}
+		<tr>
+			<td>{{ caregiver.caregiver_user_id }}</td>
+			<td><strong>{{ caregiver.user.given_name }} {{ caregiver.user.surname }}</strong></td>
+			<td>{{ caregiver.gender or '-' }}</td>
+			<td><span class="badge badge-info">{{ caregiver.caregiving_type }}</span></td>
+			<td>${{ "%.2f"|format(caregiver.hourly_rate) }}</td>
+			<td>{{ caregiver.photo or '-' }}</td>
+			<td>
+				{% if caregiver.appointments %}
+					{% for appointment in caregiver.appointments %}
+						{{ appointment.appointment_id }}{% if not loop.last %}, {% endif %}
+					{% endfor %}
+				{% else %}
+					-
+				{% endif %}
+			</td>
+			<td>
+				{% if caregiver.job_applications %}
+					{% for job_app in caregiver.job_applications %}
+						{{ job_app.job_id }}{% if not loop.last %}, {% endif %}
+					{% endfor %}
+				{% else %}
+					-
+				{% endif %}
+			</td>
+			<td>
+				<div class="action-buttons">
+					<a
+						href="{{ url_for('edit_caregiver', caregiver_id=caregiver.caregiver_user_id) }}"
+						class="btn btn-edit"
+						>Edit</a
+					>
+					<form
+						method="POST"
+						action="{{ url_for('delete_caregiver', caregiver_id=caregiver.caregiver_user_id) }}"
+						style="display: inline"
+						onsubmit="return confirm('Are you sure you want to delete this caregiver?');"
+					>
+						<button
+							type="submit"
+							class="btn btn-delete"
+						>
+							Delete
+						</button>
+					</form>
+				</div>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% else %}
+<div class="empty-state">
+	<h3>No caregivers found</h3>
+	<p>The database is empty.</p>
+</div>
+{% endif %} {% endblock %}

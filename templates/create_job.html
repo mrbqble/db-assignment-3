@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Create Job - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Create Job</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="member_user_id">Member *</label>
+        <select id="member_user_id" name="member_user_id" required>
+            <option value="">-- Select Member --</option>
+            {% for member_id, member_name in member_choices %}
+            <option value="{{ member_id }}" {% if request.form.get('member_user_id') == member_id|string %}selected{% endif %}>{{ member_id }} - {{ member_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="required_caregiving_type">Required Caregiving Type *</label>
+        <select id="required_caregiving_type" name="required_caregiving_type" required>
+            <option value="">-- Select --</option>
+            {% for type in caregiving_types %}
+            <option value="{{ type }}" {% if request.form.get('required_caregiving_type') == type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="other_requirements">Other Requirements</label>
+        <textarea id="other_requirements" name="other_requirements">{{ request.form.get('other_requirements', '') }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="date_posted">Date Posted *</label>
+        <input type="date" id="date_posted" name="date_posted" value="{{ request.form.get('date_posted', '') }}" required>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-create">Create Job</button>
+        <a href="{{ url_for('jobs') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

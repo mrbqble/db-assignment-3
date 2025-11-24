@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Create Job Application - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Create Job Application</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="caregiver_user_id">Caregiver *</label>
+        <select id="caregiver_user_id" name="caregiver_user_id" required>
+            <option value="">-- Select Caregiver --</option>
+            {% for caregiver_id, caregiver_name in caregiver_choices %}
+            <option value="{{ caregiver_id }}" {% if request.form.get('caregiver_user_id') == caregiver_id|string %}selected{% endif %}>{{ caregiver_id }} - {{ caregiver_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="job_id">Job *</label>
+        <select id="job_id" name="job_id" required>
+            <option value="">-- Select Job --</option>
+            {% for job_id, job_name in job_choices %}
+            <option value="{{ job_id }}" {% if request.form.get('job_id') == job_id|string %}selected{% endif %}>{{ job_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="date_applied">Date Applied *</label>
+        <input type="date" id="date_applied" name="date_applied" value="{{ request.form.get('date_applied', '') }}" required>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-create">Create Job Application</button>
+        <a href="{{ url_for('job_applications') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

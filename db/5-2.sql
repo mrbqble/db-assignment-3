@@ -1,3 +1,3 @@
 SELECT job_id
-FROM JOB
+FROM job
 WHERE other_requirements ILIKE '%soft-spoken%';

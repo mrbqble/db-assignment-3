@@ -1,0 +1,310 @@
+{% extends "base.html" %} {% block title %}Appointments - Database Management{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0; color: #495057">Appointments</h2>
+    <a href="{{ url_for('create_appointment') }}" class="btn btn-create" style="padding: 10px 20px; text-decoration: none;">Create Appointment</a>
+</div>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+	<form method="GET" action="{{ url_for('appointments') }}" id="filterForm" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="caregiver_id" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Caregiver</label>
+			<select id="caregiver_id" name="caregiver_id" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Caregivers</option>
+				{% for id, name in caregiver_ids %}
+				<option value="{{ id }}" {% if caregiver_id and caregiver_id|int == id %}selected{% endif %}>{{ id }} - {{ name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="member_id" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Member</label>
+			<select id="member_id" name="member_id" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Members</option>
+				{% for id, name in member_ids %}
+				<option value="{{ id }}" {% if member_id and member_id|int == id %}selected{% endif %}>{{ id }} - {{ name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="from_date" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">From Date</label>
+			<select id="from_date" name="from_date" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Dates</option>
+				{% for date_val in available_dates %}
+				<option value="{{ date_val.isoformat() }}" {% if from_date == date_val.isoformat() %}selected{% endif %}>{{ date_val.strftime('%d/%m/%Y') }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="to_date" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">To Date</label>
+			<select id="to_date" name="to_date" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Dates</option>
+				{% for date_val in available_dates %}
+				<option value="{{ date_val.isoformat() }}" data-date="{{ date_val.isoformat() }}" {% if to_date == date_val.isoformat() %}selected{% endif %}>{{ date_val.strftime('%d/%m/%Y') }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="from_time" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">From Time</label>
+			<select id="from_time" name="from_time" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Times</option>
+				{% for time_val in available_times %}
+				<option value="{{ time_val.strftime('%H:%M') }}" {% if from_time == time_val.strftime('%H:%M') %}selected{% endif %}>{{ time_val.strftime('%H:%M') }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="to_time" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">To Time</label>
+			<select id="to_time" name="to_time" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Times</option>
+				{% for time_val in available_times %}
+				<option value="{{ time_val.strftime('%H:%M') }}" data-time="{{ time_val.strftime('%H:%M') }}" {% if to_time == time_val.strftime('%H:%M') %}selected{% endif %}>{{ time_val.strftime('%H:%M') }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="min_hours" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Min Hours</label>
+			<input type="number" id="min_hours" name="min_hours" value="{{ min_hours }}" step="0.1" min="0" placeholder="Min" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="max_hours" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Max Hours</label>
+			<input type="number" id="max_hours" name="max_hours" value="{{ max_hours }}" step="0.1" min="0" placeholder="Max" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+			<label for="status" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Status</label>
+			<select id="status" name="status" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Statuses</option>
+				{% for status in appointment_statuses %}
+				<option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status|title }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div style="display: flex; gap: 10px;">
+			<a href="{{ url_for('appointments') }}" class="btn btn-cancel" style="padding: 8px 20px; text-decoration: none;">Clear</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const caregiverIdSelect = document.getElementById('caregiver_id');
+		const memberIdSelect = document.getElementById('member_id');
+		const fromDateSelect = document.getElementById('from_date');
+		const toDateSelect = document.getElementById('to_date');
+		const fromTimeSelect = document.getElementById('from_time');
+		const toTimeSelect = document.getElementById('to_time');
+		const minHoursInput = document.getElementById('min_hours');
+		const maxHoursInput = document.getElementById('max_hours');
+		const statusSelect = document.getElementById('status');
+		const filterForm = document.getElementById('filterForm');
+
+		// Function to filter to_date options based on from_date
+		function filterToDateOptions() {
+			const fromDateValue = fromDateSelect.value;
+			const toDateOptions = toDateSelect.querySelectorAll('option');
+			const currentToDateValue = toDateSelect.value;
+
+			toDateOptions.forEach(function(option) {
+				if (option.value === '') {
+					option.style.display = '';
+				} else if (fromDateValue === '') {
+					option.style.display = '';
+				} else {
+					const optionDate = option.getAttribute('data-date');
+					if (optionDate && optionDate >= fromDateValue) {
+						option.style.display = '';
+					} else {
+						option.style.display = 'none';
+					}
+				}
+			});
+
+			if (fromDateValue && currentToDateValue) {
+				if (currentToDateValue < fromDateValue) {
+					toDateSelect.value = '';
+				}
+			}
+		}
+
+		// Function to filter to_time options based on from_time
+		function filterToTimeOptions() {
+			const fromTimeValue = fromTimeSelect.value;
+			const toTimeOptions = toTimeSelect.querySelectorAll('option');
+			const currentToTimeValue = toTimeSelect.value;
+
+			toTimeOptions.forEach(function(option) {
+				if (option.value === '') {
+					option.style.display = '';
+				} else if (fromTimeValue === '') {
+					option.style.display = '';
+				} else {
+					const optionTime = option.getAttribute('data-time');
+					if (optionTime && optionTime >= fromTimeValue) {
+						option.style.display = '';
+					} else {
+						option.style.display = 'none';
+					}
+				}
+			});
+
+			if (fromTimeValue && currentToTimeValue) {
+				if (currentToTimeValue < fromTimeValue) {
+					toTimeSelect.value = '';
+				}
+			}
+		}
+
+		// Initial filters on page load
+		filterToDateOptions();
+		filterToTimeOptions();
+
+		caregiverIdSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		memberIdSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		fromDateSelect.addEventListener('change', function() {
+			filterToDateOptions();
+			filterForm.submit();
+		});
+
+		toDateSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		fromTimeSelect.addEventListener('change', function() {
+			filterToTimeOptions();
+			filterForm.submit();
+		});
+
+		toTimeSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		minHoursInput.addEventListener('blur', function() {
+			if (minHoursInput.value || maxHoursInput.value) {
+				filterForm.submit();
+			}
+		});
+
+		maxHoursInput.addEventListener('blur', function() {
+			if (minHoursInput.value || maxHoursInput.value) {
+				filterForm.submit();
+			}
+		});
+
+		minHoursInput.addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				filterForm.submit();
+			}
+		});
+
+		maxHoursInput.addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				filterForm.submit();
+			}
+		});
+
+		statusSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+	});
+</script>
+
+{% if appointments %}
+<table>
+	<thead>
+		<tr>
+			<th>Appointment ID</th>
+			<th>Caregiver ID</th>
+			<th>Caregiver Name</th>
+			<th>Member ID</th>
+			<th>Member Name</th>
+			<th>Appointment Date</th>
+			<th>Appointment Time</th>
+			<th>Work Hours</th>
+			<th>Status</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for appointment in appointments %}
+		<tr>
+			<td>{{ appointment.appointment_id }}</td>
+			<td>{{ appointment.caregiver_user_id }}</td>
+			<td><strong>{{ appointment.caregiver.user.given_name }} {{ appointment.caregiver.user.surname }}</strong></td>
+			<td>{{ appointment.member_user_id }}</td>
+			<td>{{ appointment.member.user.given_name }} {{ appointment.member.user.surname }}</td>
+			<td>{{ appointment.appointment_date.strftime('%d/%m/%Y') if appointment.appointment_date else '-' }}</td>
+			<td>{{ appointment.appointment_time }}</td>
+			<td>{{ appointment.work_hours }} hours</td>
+			<td>
+				<span
+					class="badge badge-{{ 'success' if appointment.status == 'accepted' else ('warning' if appointment.status == 'pending' else 'danger') }}"
+				>
+					{{ appointment.status|title }}
+				</span>
+			</td>
+			<td>
+				<div class="action-buttons">
+					{% if appointment.status == 'pending' %}
+					<form
+						method="POST"
+						action="{{ url_for('accept_appointment', appointment_id=appointment.appointment_id) }}"
+						style="display: inline"
+					>
+						<button
+							type="submit"
+							class="btn"
+							style="background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;"
+						>
+							Accept
+						</button>
+					</form>
+					<form
+						method="POST"
+						action="{{ url_for('decline_appointment', appointment_id=appointment.appointment_id) }}"
+						style="display: inline"
+					>
+						<button
+							type="submit"
+							class="btn"
+							style="background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;"
+						>
+							Decline
+						</button>
+					</form>
+					{% endif %}
+					<a
+						href="{{ url_for('edit_appointment', appointment_id=appointment.appointment_id) }}"
+						class="btn btn-edit"
+						>Edit</a
+					>
+					<form
+						method="POST"
+						action="{{ url_for('delete_appointment', appointment_id=appointment.appointment_id) }}"
+						style="display: inline"
+						onsubmit="return confirm('Are you sure you want to delete this appointment?');"
+					>
+						<button
+							type="submit"
+							class="btn btn-delete"
+						>
+							Delete
+						</button>
+					</form>
+				</div>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% else %}
+<div class="empty-state">
+	<h3>No appointments found</h3>
+	<p>The database is empty.</p>
+</div>
+{% endif %} {% endblock %}

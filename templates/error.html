@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Database Management{% endblock %}
+
+{% block content %}
+<div class="empty-state" style="padding: 60px 20px;">
+    <h3 style="color: #dc3545; margin-bottom: 20px;">⚠️ Error</h3>
+    <p style="font-size: 1.2em; margin-bottom: 30px; color: #495057;">{{ message }}</p>
+    {% if action_url %}
+    <a href="{{ action_url }}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
+        {{ action_text }}
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+

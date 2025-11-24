@@ -1,48 +1,349 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Caregiver Platform</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <nav class="nav">
-    <div class="container">
-      <a class="brand" href="/">Caregiver Platform</a>
-      <div class="nav-links">
-        {% if session.get('user_id') %}
-          <span style="margin-right:12px">Hello, {{ session.get('user_name') }}</span>
-          {% if session.get('user_role') == 'member' %}
-            <a href="/dashboard/member/{{ session.get('user_id') }}">Dashboard</a>
-          {% else %}
-            <a href="/profile/{{ session.get('user_id') }}">My Profile</a>
-          {% endif %}
-          <a href="/logout">Logout</a>
-        {% else %}
-          <a href="/login">Login</a>
-          <a href="/register/caregiver">Register Caregiver</a>
-          <a href="/register/member">Register Member</a>
-        {% endif %}
-        <a href="/search">Search Caregivers</a>
-        <a href="/jobs">Jobs</a>
-      </div>
-    </div>
-  </nav>
-  <main class="container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="messages">
-          {% for category, msg in messages %}
-            <div class="flash {{ category }}">{{ msg }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
-  <footer class="footer">
-    <div class="container">&copy; 2025 Caregiver Platform</div>
-  </footer>
-</body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>{% block title %}Database Dashboard{% endblock %}</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				padding: 20px;
+			}
+
+			.container {
+				margin: 0 auto;
+				background: white;
+				border-radius: 12px;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+				overflow: hidden;
+			}
+
+			.header {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				padding: 30px;
+				text-align: center;
+			}
+
+			.header h1 {
+				font-size: 2.5em;
+				margin-bottom: 10px;
+			}
+
+			.header p {
+				opacity: 0.9;
+				font-size: 1.1em;
+			}
+
+			.nav-tabs {
+				display: flex;
+				background: #f8f9fa;
+				border-bottom: 2px solid #e9ecef;
+				overflow-x: auto;
+				flex-wrap: wrap;
+			}
+
+			.nav-tab {
+				padding: 15px 25px;
+				text-decoration: none;
+				color: #495057;
+				font-weight: 500;
+				border-bottom: 3px solid transparent;
+				transition: all 0.3s;
+				white-space: nowrap;
+			}
+
+			.nav-tab:hover {
+				background: #e9ecef;
+				color: #667eea;
+			}
+
+			.nav-tab.active {
+				color: #667eea;
+				border-bottom-color: #667eea;
+				background: white;
+			}
+
+			.content {
+				padding: 30px;
+			}
+
+			.dashboard-stats {
+				display: grid;
+				grid-template-columns: repeat(7, 1fr);
+				gap: 20px;
+				margin-bottom: 30px;
+			}
+
+			@media (max-width: 1400px) {
+				.dashboard-stats {
+					grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+				}
+			}
+
+			.stat-card {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				padding: 20px;
+				border-radius: 8px;
+				text-align: center;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+
+			.stat-card h3 {
+				font-size: 2.5em;
+				margin-bottom: 10px;
+			}
+
+			.stat-card p {
+				opacity: 0.9;
+				font-size: 1.1em;
+			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+				margin-top: 20px;
+				background: white;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+			th,
+			td {
+				padding: 12px;
+				text-align: left;
+				border-bottom: 1px solid #e9ecef;
+			}
+
+			th {
+				background: #f8f9fa;
+				font-weight: 600;
+				color: #495057;
+				position: sticky;
+				top: 0;
+			}
+
+			tr:hover {
+				background: #f8f9fa;
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 60px 20px;
+				color: #6c757d;
+			}
+
+			.empty-state h3 {
+				font-size: 1.5em;
+				margin-bottom: 10px;
+			}
+
+			.badge {
+				display: inline-block;
+				padding: 4px 8px;
+				border-radius: 4px;
+				font-size: 0.85em;
+				font-weight: 600;
+			}
+
+			.badge-success {
+				background: #d4edda;
+				color: #155724;
+			}
+
+			.badge-warning {
+				background: #fff3cd;
+				color: #856404;
+			}
+
+			.badge-info {
+				background: #d1ecf1;
+				color: #0c5460;
+			}
+
+			.flash-messages {
+				padding: 15px;
+				margin-bottom: 20px;
+			}
+
+			.flash-message {
+				padding: 12px 20px;
+				margin-bottom: 10px;
+				border-radius: 6px;
+				font-weight: 500;
+			}
+
+			.flash-success {
+				background: #d4edda;
+				color: #155724;
+				border: 1px solid #c3e6cb;
+			}
+
+			.flash-error {
+				background: #f8d7da;
+				color: #721c24;
+				border: 1px solid #f5c6cb;
+			}
+
+			.action-buttons {
+				display: flex;
+				gap: 8px;
+			}
+
+			.btn {
+				padding: 6px 12px;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				text-decoration: none;
+				font-size: 0.9em;
+				font-weight: 500;
+				transition: all 0.2s;
+			}
+
+			.btn-edit {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-edit:hover {
+				background: #5568d3;
+			}
+
+			.btn-delete {
+				background: #dc3545;
+				color: white;
+			}
+
+			.btn-delete:hover {
+				background: #c82333;
+			}
+
+			.btn-cancel {
+				background: #6c757d;
+				color: white;
+			}
+
+			.btn-cancel:hover {
+				background: #5a6268;
+			}
+
+			.btn-create {
+				background: #28a745;
+				color: white;
+			}
+
+			.btn-create:hover {
+				background: #218838;
+			}
+
+			.form-group {
+				margin-bottom: 20px;
+			}
+
+			.form-group label {
+				display: block;
+				margin-bottom: 5px;
+				font-weight: 600;
+				color: #495057;
+			}
+
+			.form-group input,
+			.form-group textarea,
+			.form-group select {
+				width: 100%;
+				padding: 10px;
+				border: 1px solid #ced4da;
+				border-radius: 4px;
+				font-size: 1em;
+			}
+
+			.form-group textarea {
+				min-height: 100px;
+				resize: vertical;
+			}
+		</style>
+		{% block extra_css %}{% endblock %}
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>Database Management Dashboard</h1>
+				<p>Manage and view all database entities</p>
+			</div>
+
+			<nav class="nav-tabs">
+				<a
+					href="{{ url_for('home') }}"
+					class="nav-tab {% if request.endpoint == 'home' %}active{% endif %}"
+				>
+					Dashboard
+				</a>
+				<a
+					href="{{ url_for('users') }}"
+					class="nav-tab {% if request.endpoint == 'users' %}active{% endif %}"
+				>
+					Users
+				</a>
+				<a
+					href="{{ url_for('caregivers') }}"
+					class="nav-tab {% if request.endpoint == 'caregivers' %}active{% endif %}"
+				>
+					Caregivers
+				</a>
+				<a
+					href="{{ url_for('members') }}"
+					class="nav-tab {% if request.endpoint == 'members' %}active{% endif %}"
+				>
+					Members
+				</a>
+				<a
+					href="{{ url_for('addresses') }}"
+					class="nav-tab {% if request.endpoint == 'addresses' %}active{% endif %}"
+				>
+					Addresses
+				</a>
+				<a
+					href="{{ url_for('jobs') }}"
+					class="nav-tab {% if request.endpoint == 'jobs' %}active{% endif %}"
+				>
+					Jobs
+				</a>
+				<a
+					href="{{ url_for('job_applications') }}"
+					class="nav-tab {% if request.endpoint == 'job_applications' %}active{% endif %}"
+				>
+					Job Applications
+				</a>
+				<a
+					href="{{ url_for('appointments') }}"
+					class="nav-tab {% if request.endpoint == 'appointments' %}active{% endif %}"
+				>
+					Appointments
+				</a>
+			</nav>
+
+			<div class="content">
+				{% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
+				<div class="flash-messages">
+					{% for category, message in messages %}
+					<div class="flash-message flash-{{ category }}">{{ message }}</div>
+					{% endfor %}
+				</div>
+				{% endif %} {% endwith %} {% block content %}{% endblock %}
+			</div>
+		</div>
+		{% block extra_js %}{% endblock %}
+	</body>
 </html>

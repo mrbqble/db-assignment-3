@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Edit User</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" value="{{ user.email }}"
+               pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+               title="Please enter a valid email address (e.g., user@example.com)"
+               required>
+    </div>
+
+    <div class="form-group">
+        <label for="given_name">Given Name *</label>
+        <input type="text" id="given_name" name="given_name" value="{{ user.given_name }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="surname">Surname *</label>
+        <input type="text" id="surname" name="surname" value="{{ user.surname }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="city">City</label>
+        <input type="text" id="city" name="city" value="{{ user.city or '' }}">
+    </div>
+
+    <div class="form-group">
+        <label for="phone_number">Phone Number *</label>
+        <input type="tel" id="phone_number" name="phone_number" value="{{ user.phone_number or '' }}"
+               pattern="[\d\s\-\+\(\)]+"
+               title="Please enter a valid phone number (digits, spaces, hyphens, parentheses, or + sign)"
+               minlength="7" maxlength="20" required>
+    </div>
+
+    <div class="form-group">
+        <label for="profile_description">Profile Description</label>
+        <textarea id="profile_description" name="profile_description">{{ user.profile_description or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" name="password"
+               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&amp;*()_+\-=\[\]{};':&quot;\\|,.<>\/?]).{8,}$"
+               title="Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
+               required>
+        <small style="display: block; margin-top: 5px; color: #6c757d; font-size: 0.9em;">
+            Must be at least 8 characters with: 1 uppercase, 1 lowercase, 1 digit, and 1 special character
+        </small>
+    </div>
+
+    <h3 style="margin: 30px 0 15px 0; color: #667eea;">User Roles</h3>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #495057;">
+            <input type="checkbox" id="is_caregiver" name="is_caregiver" onchange="toggleCaregiverFields()" {% if user.caregiver %}checked{% endif %} style="width: auto; margin: 0; cursor: pointer;">
+            <span>Create as Caregiver</span>
+        </label>
+    </div>
+    <div class="form-group" style="margin-bottom: 15px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #495057;">
+            <input type="checkbox" id="is_member" name="is_member" onchange="toggleMemberFields()" {% if user.member %}checked{% endif %} style="width: auto; margin: 0; cursor: pointer;">
+            <span>Create as Member</span>
+        </label>
+    </div>
+
+    <div id="caregiver_fields" style="display: {% if user.caregiver %}block{% else %}none{% endif %};">
+        <h3 style="margin: 30px 0 15px 0; color: #667eea;">Caregiver Information</h3>
+        <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender">
+                <option value="">-- Select --</option>
+                <option value="Male" {% if user.caregiver and user.caregiver.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if user.caregiver and user.caregiver.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if user.caregiver and user.caregiver.gender == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="caregiving_type">Caregiving Type *</label>
+            <select id="caregiving_type" name="caregiving_type">
+                <option value="">-- Select --</option>
+                {% for type in caregiving_types %}
+                <option value="{{ type }}" {% if user.caregiver and user.caregiver.caregiving_type == type %}selected{% endif %}>{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="hourly_rate">Hourly Rate *</label>
+            <input type="number" id="hourly_rate" name="hourly_rate" step="0.01" min="0" value="{% if user.caregiver %}{{ user.caregiver.hourly_rate }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="photo">Photo URL</label>
+            <input type="text" id="photo" name="photo" value="{% if user.caregiver and user.caregiver.photo %}{{ user.caregiver.photo }}{% endif %}">
+        </div>
+    </div>
+
+    <div id="member_fields" style="display: {% if user.member %}block{% else %}none{% endif %};">
+        <h3 style="margin: 30px 0 15px 0; color: #667eea;">Member Information</h3>
+        <div class="form-group">
+            <label for="house_rules">House Rules</label>
+            <textarea id="house_rules" name="house_rules">{% if user.member and user.member.house_rules %}{{ user.member.house_rules }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="dependent_description">Dependent Description</label>
+            <textarea id="dependent_description" name="dependent_description">{% if user.member and user.member.dependent_description %}{{ user.member.dependent_description }}{% endif %}</textarea>
+        </div>
+
+        <h4 style="margin: 20px 0 15px 0; color: #667eea;">Address *</h4>
+        <div class="form-group">
+            <label for="house_number">House Number *</label>
+            <input type="text" id="house_number" name="house_number" value="{% if user.member and user.member.address %}{{ user.member.address.house_number }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="street">Street *</label>
+            <input type="text" id="street" name="street" value="{% if user.member and user.member.address %}{{ user.member.address.street }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="town">Town *</label>
+            <input type="text" id="town" name="town" value="{% if user.member and user.member.address %}{{ user.member.address.town }}{% endif %}">
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-edit">Update User</button>
+        <a href="{{ url_for('users') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+
+<script>
+function toggleCaregiverFields() {
+    const checkbox = document.getElementById('is_caregiver');
+    const fields = document.getElementById('caregiver_fields');
+    if (checkbox.checked) {
+        fields.style.display = 'block';
+        // Make required fields actually required
+        document.getElementById('caregiving_type').required = true;
+        document.getElementById('hourly_rate').required = true;
+    } else {
+        fields.style.display = 'none';
+        // Remove required attribute
+        document.getElementById('caregiving_type').required = false;
+        document.getElementById('hourly_rate').required = false;
+    }
+}
+
+function toggleMemberFields() {
+    const checkbox = document.getElementById('is_member');
+    const fields = document.getElementById('member_fields');
+    if (checkbox.checked) {
+        fields.style.display = 'block';
+        // Make required fields actually required
+        document.getElementById('house_number').required = true;
+        document.getElementById('street').required = true;
+        document.getElementById('town').required = true;
+    } else {
+        fields.style.display = 'none';
+        // Remove required attribute
+        document.getElementById('house_number').required = false;
+        document.getElementById('street').required = false;
+        document.getElementById('town').required = false;
+    }
+}
+
+// Initialize required fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('is_caregiver').checked) {
+        document.getElementById('caregiving_type').required = true;
+        document.getElementById('hourly_rate').required = true;
+    }
+    if (document.getElementById('is_member').checked) {
+        document.getElementById('house_number').required = true;
+        document.getElementById('street').required = true;
+        document.getElementById('town').required = true;
+    }
+});
+</script>
+{% endblock %}
+

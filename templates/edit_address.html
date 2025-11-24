@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Address - Database Management{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px; color: #495057;">Edit Address</h2>
+
+<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <p style="margin: 0; color: #495057;"><strong>Member:</strong> {{ address.member.user.given_name }} {{ address.member.user.surname }} ({{ address.member.user.email }})</p>
+    <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 0.9em;">To edit member information, please use the <a href="{{ url_for('edit_member', member_id=address.member.member_user_id) }}">Edit Member</a> page.</p>
+</div>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="house_number">House Number *</label>
+        <input type="text" id="house_number" name="house_number" value="{{ address.house_number }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="street">Street *</label>
+        <input type="text" id="street" name="street" value="{{ address.street }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="town">Town *</label>
+        <input type="text" id="town" name="town" value="{{ address.town }}" required>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn btn-edit">Update Address</button>
+        <a href="{{ url_for('addresses') }}" class="btn btn-cancel">Cancel</a>
+    </div>
+</form>
+{% endblock %}
+

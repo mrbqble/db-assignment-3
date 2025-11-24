@@ -1,0 +1,135 @@
+{% extends "base.html" %} {% block title %}Users - Database Management{% endblock %} {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+	<h2 style="margin: 0; color: #495057">Users</h2>
+	<a href="{{ url_for('create_user') }}" class="btn btn-edit" style="padding: 10px 20px; text-decoration: none;">Create User</a>
+</div>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+	<form method="GET" action="{{ url_for('users') }}" id="filterForm" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 250px;">
+			<label for="search" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Search (Name, Email, Phone)</label>
+			<input type="text" id="search" name="search" value="{{ search_term }}" placeholder="Search by name, email, or phone..." style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="city" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">City</label>
+			<select id="city" name="city" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Cities</option>
+				{% for city in cities %}
+				<option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+			<label for="status" style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">Status</label>
+			<select id="status" name="status" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+				<option value="">All Statuses</option>
+				<option value="caregiver" {% if selected_status == 'caregiver' %}selected{% endif %}>Caregiver</option>
+				<option value="member" {% if selected_status == 'member' %}selected{% endif %}>Member</option>
+				<option value="both" {% if selected_status == 'both' %}selected{% endif %}>Both</option>
+				<option value="none" {% if selected_status == 'none' %}selected{% endif %}>None</option>
+			</select>
+		</div>
+		<div style="display: flex; gap: 10px; align-items: end;">
+			<button type="submit" class="btn btn-edit" style="padding: 8px 20px;">Search</button>
+			<a href="{{ url_for('users') }}" class="btn btn-cancel" style="padding: 8px 20px; text-decoration: none;">Clear</a>
+		</div>
+	</form>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const searchInput = document.getElementById('search');
+		const citySelect = document.getElementById('city');
+		const statusSelect = document.getElementById('status');
+		const filterForm = document.getElementById('filterForm');
+
+		// Search on Enter key
+		searchInput.addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				filterForm.submit();
+			}
+		});
+
+		citySelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+
+		statusSelect.addEventListener('change', function() {
+			filterForm.submit();
+		});
+	});
+</script>
+
+{% if users %}
+<table>
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Email</th>
+			<th>Name</th>
+			<th>Status</th>
+			<th>City</th>
+			<th>Phone Number</th>
+			<th>Profile Description</th>
+			<th>Password</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for user in users %}
+		<tr>
+			<td>{{ user.user_id }}</td>
+			<td>{{ user.email }}</td>
+			<td><strong>{{ user.given_name }} {{ user.surname }}</strong></td>
+			<td>
+				{% if user.caregiver and user.member %}
+				<span class="badge badge-info">Caregiver</span>
+				<span class="badge badge-success">Member</span>
+				{% elif user.caregiver %}
+				<span class="badge badge-info">Caregiver</span>
+				{% elif user.member %}
+				<span class="badge badge-success">Member</span>
+				{% else %}
+				<span style="color: #6c757d">-</span>
+				{% endif %}
+			</td>
+			<td>{{ user.city or '-' }}</td>
+			<td>{{ user.phone_number or '-' }}</td>
+			<td>
+				{{ user.profile_description[:50] + '...' if user.profile_description and user.profile_description|length > 50 else (user.profile_description
+				or '-') }}
+			</td>
+			<td>{{ user.password }}</td>
+			<td>
+				<div class="action-buttons">
+					<a
+						href="{{ url_for('edit_user', user_id=user.user_id) }}"
+						class="btn btn-edit"
+						>Edit</a
+					>
+					<form
+						method="POST"
+						action="{{ url_for('delete_user', user_id=user.user_id) }}"
+						style="display: inline"
+						onsubmit="return confirm('Are you sure you want to delete this user?');"
+					>
+						<button
+							type="submit"
+							class="btn btn-delete"
+						>
+							Delete
+						</button>
+					</form>
+				</div>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% else %}
+<div class="empty-state">
+	<h3>No users found</h3>
+	<p>The database is empty.</p>
+</div>
+{% endif %} {% endblock %}
