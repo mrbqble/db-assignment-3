@@ -14,9 +14,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
+
 @app.route('/')
 def hello():
     return 'Hello, World!'
+
 
 @app.route('/test-db')
 def test_db():
@@ -29,6 +31,6 @@ def test_db():
     except Exception as e:
         return f'Database error: {str(e)}', 500
 
+
 if __name__ == '__main__':
     app.run(debug=True)
-
